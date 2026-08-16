@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  # ========================================================
+  # 1. MySQL 8 Database Service
+  # ========================================================
+  mysql:
+    image: mysql:8.0
+    container_name: smart-campus-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-smart_campus_db}
+      MYSQL_USER: ${DB_USER:-campus_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-campus_pass_2026}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret_2026}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - campus-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_secret_2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+
+  # ========================================================
+  # 2. Spring Boot 3 Java Backend Service
+  # ========================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smart-campus-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-smart_campus_db}
+      DB_USER: ${DB_USER:-campus_user}
+      DB_PASSWORD: ${DB_PASSWORD:-campus_pass_2026}
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+    ports:
+      - "8080:8080"
+    networks:
+      - campus-network
+
+  # ========================================================
+  # 3. React 18 + Nginx Frontend Service
+  # ========================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: smart-campus-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+      - "5173:80"
+    networks:
+      - campus-network
+
+networks:
+  campus-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
