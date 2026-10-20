@@ -164,6 +164,10 @@ public class AuthService {
         return login(authReq);
     }
 
+    public void logout(String token) {
+        tokenProvider.revokeToken(token);
+    }
+
     public UserProfileDTO getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
