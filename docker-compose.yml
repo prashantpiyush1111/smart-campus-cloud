@@ -45,8 +45,8 @@ services:
       DB_NAME: ${DB_NAME:-smart_campus_db}
       DB_USER: ${DB_USER:-campus_user}
       DB_PASSWORD: ${DB_PASSWORD:-campus_pass_2026}
-      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
-      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-86400000}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET to a unique generated secret}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-900000}
     ports:
       - "8080:8080"
     networks:
