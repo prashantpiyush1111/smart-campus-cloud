@@ -8,7 +8,9 @@ import com.smartcampus.entity.Role;
 import com.smartcampus.security.AuthEntryPointJwt;
 import com.smartcampus.security.JwtTokenProvider;
 import com.smartcampus.security.UserDetailsServiceImpl;
+import com.smartcampus.security.LoginRateLimiter;
 import com.smartcampus.service.AuthService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -33,6 +36,14 @@ public class AuthControllerTest {
 
     @MockBean
     private AuthService authService;
+
+    @MockBean
+    private LoginRateLimiter loginRateLimiter;
+
+    @BeforeEach
+    void allowLoginAttemptsInControllerTests() {
+        when(loginRateLimiter.tryAcquire(anyString())).thenReturn(true);
+    }
 
     @MockBean
     private JwtTokenProvider jwtTokenProvider;
