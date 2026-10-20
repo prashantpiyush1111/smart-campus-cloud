@@ -1,6 +1,13 @@
 import axios from 'axios';
 import * as MockData from './mockData';
 
+// Access tokens live only in memory so XSS cannot read them from persistent browser storage.
+let accessToken = null;
+
+export const setAccessToken = (token) => {
+  accessToken = token || null;
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
   timeout: 6000,
@@ -12,7 +19,7 @@ const api = axios.create({
 // Request interceptor to attach JWT Token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('smart_campus_jwt');
+    const token = accessToken;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
