@@ -1,9 +1,11 @@
 package com.smartcampus.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.Immutable;
 import java.time.LocalDateTime;
 
 @Entity
+@Immutable
 @Table(name = "activity_logs", indexes = {
     @Index(name = "idx_act_timestamp", columnList = "timestamp"),
     @Index(name = "idx_act_user", columnList = "user_email")
