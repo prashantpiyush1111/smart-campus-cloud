@@ -12,17 +12,22 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class JwtTokenProvider {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtTokenProvider.class);
 
-    @Value("${app.jwt.secret:9a78e85d9b626e82c16f2c00a0e9b6a7d1891a27e8d4a65b1c8f3e2d1a4c5b6e}")
+    @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    @Value("${app.jwt.expiration-milliseconds:86400000}") // 24 hours
+    // Access tokens are intentionally short-lived. Override only through secure deployment config.
+    @Value("${app.jwt.expiration-milliseconds:900000}")
     private long jwtExpirationInMs;
+
+    // Best-effort, process-local revocation. A shared store is needed for multi-instance deployments.
+    private final ConcurrentHashMap<String, Long> revokedTokens = new ConcurrentHashMap<>();
 
     private Key getSigningKey() {
         byte[] keyBytes = this.jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -40,7 +45,7 @@ public class JwtTokenProvider {
                 .claim("email", userPrincipal.getUsername())
                 .claim("role", userPrincipal.getRole().name())
                 .claim("fullName", userPrincipal.getFullName())
-                .setIssuedAt(new Date())
+                .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
@@ -56,19 +61,47 @@ public class JwtTokenProvider {
         return Long.parseLong(claims.getSubject());
     }
 
+    public void revokeToken(String token) {
+        if (token == null || token.isBlank()) {
+            return;
+        }
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            long expiry = claims.getExpiration() == null
+                    ? System.currentTimeMillis() + jwtExpirationInMs
+                    : claims.getExpiration().getTime();
+            if (expiry > System.currentTimeMillis()) {
+                revokedTokens.put(token, expiry);
+            }
+        } catch (JwtException | IllegalArgumentException ex) {
+            logger.debug("Ignoring invalid token during logout");
+        }
+        removeExpiredRevocations();
+    }
+
     public boolean validateToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(getSigningKey()).build().parseClaimsJws(authToken);
-            return true;
+            removeExpiredRevocations();
+            return !revokedTokens.containsKey(authToken);
         } catch (SecurityException | MalformedJwtException ex) {
-            logger.error("Invalid JWT signature");
+            logger.warn("Invalid JWT signature or format");
         } catch (ExpiredJwtException ex) {
-            logger.error("Expired JWT token");
+            logger.debug("Expired JWT token");
         } catch (UnsupportedJwtException ex) {
-            logger.error("Unsupported JWT token");
+            logger.warn("Unsupported JWT token");
         } catch (IllegalArgumentException ex) {
-            logger.error("JWT claims string is empty");
+            logger.warn("JWT claims string is empty");
         }
         return false;
+    }
+
+    private void removeExpiredRevocations() {
+        long now = System.currentTimeMillis();
+        revokedTokens.entrySet().removeIf(entry -> entry.getValue() <= now);
     }
 }
