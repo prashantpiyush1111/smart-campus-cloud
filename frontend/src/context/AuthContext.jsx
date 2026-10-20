@@ -24,7 +24,13 @@ export const AuthProvider = ({ children }) => {
       }
       throw new Error(res.message || 'Login failed');
     } catch (err) {
-      console.warn('Backend login fallback to mock demo user');
+      if (err.response) {
+        setUser(null);
+        setToken(null);
+        setAccessToken(null);
+        return { success: false, message: err.response.data?.message || 'Login failed. Please check your credentials or try again later.' };
+      }
+      console.warn('Backend unavailable; using mock demo user');
       // Fallback matching
       let mock = mockUsers.student;
       if (email.includes('admin')) mock = mockUsers.admin;
@@ -50,6 +56,9 @@ export const AuthProvider = ({ children }) => {
       }
       throw new Error(res.message || 'Registration failed');
     } catch (err) {
+      if (err.response) {
+        return { success: false, message: err.response.data?.message || 'Registration failed. Please try again.' };
+      }
       // Mock registration fallback
       const newUser = {
         ...mockUsers.student,
