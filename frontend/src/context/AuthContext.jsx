@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { authService } from '../services/authService';
 import { setAccessToken } from '../services/api';
 import { mockUsers } from '../services/mockData';
@@ -6,21 +6,11 @@ import { mockUsers } from '../services/mockData';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem('smart_campus_user');
-    return saved ? JSON.parse(saved) : mockUsers.student; // Defaults to student for frictionless instant preview
-  });
+  const [user, setUser] = useState(null);
 
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('smart_campus_user', JSON.stringify(user));
-    } else {
-      localStorage.removeItem('smart_campus_user');
-    }
-  }, [user]);
 
   const login = async (email, password) => {
     setLoading(true);
@@ -55,6 +45,7 @@ export const AuthProvider = ({ children }) => {
       if (res.success && res.data) {
         setUser(res.data);
         setToken(res.data.token);
+        setAccessToken(res.data.token);
         return { success: true, user: res.data };
       }
       throw new Error(res.message || 'Registration failed');
