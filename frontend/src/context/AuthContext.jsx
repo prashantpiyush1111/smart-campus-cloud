@@ -3,17 +3,22 @@ import { authService } from '../services/authService';
 import { mockUsers } from '../services/mockData';
 
 const AuthContext = createContext();
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
+    if (!demoMode) return null;
     const saved = localStorage.getItem('smart_campus_user');
-    return saved ? JSON.parse(saved) : mockUsers.student; // Defaults to student for frictionless instant preview
+    return saved ? JSON.parse(saved) : mockUsers.student;
   });
 
-  const [token, setToken] = useState(() => localStorage.getItem('smart_campus_jwt') || 'demo-jwt-token');
+  const [token, setToken] = useState(() =>
+    demoMode ? (localStorage.getItem('smart_campus_jwt') || 'demo-jwt-token') : null
+  );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!demoMode) return;
     if (user) {
       localStorage.setItem('smart_campus_user', JSON.stringify(user));
     } else {
@@ -22,6 +27,7 @@ export const AuthProvider = ({ children }) => {
   }, [user]);
 
   useEffect(() => {
+    if (!demoMode) return;
     if (token) {
       localStorage.setItem('smart_campus_jwt', token);
     } else {
@@ -38,16 +44,22 @@ export const AuthProvider = ({ children }) => {
         setToken(res.data.token);
         return { success: true, user: res.data };
       }
-      throw new Error(res.message || 'Login failed');
+      return { success: false, message: res.message || 'Login failed. Please check your credentials.' };
     } catch (err) {
-      console.warn('Backend login fallback to mock demo user');
-      // Fallback matching
-      let mock = mockUsers.student;
-      if (email.includes('admin')) mock = mockUsers.admin;
-      else if (email.includes('faculty')) mock = mockUsers.faculty;
-      setUser(mock);
-      setToken(mock.token);
-      return { success: true, user: mock };
+      // Never turn rejected production credentials or network failures into a mock admin session.
+      if (err.response) {
+        return { success: false, message: err.response.data?.message || 'Login failed. Please check your credentials.' };
+      }
+      if (demoMode) {
+        console.warn('Backend unavailable; using mock demo user');
+        let mock = mockUsers.student;
+        if (email.includes('admin')) mock = mockUsers.admin;
+        else if (email.includes('faculty')) mock = mockUsers.faculty;
+        setUser(mock);
+        setToken(mock.token);
+        return { success: true, user: mock };
+      }
+      return { success: false, message: 'Unable to reach the login service. Please try again later.' };
     } finally {
       setLoading(false);
     }
@@ -62,19 +74,24 @@ export const AuthProvider = ({ children }) => {
         setToken(res.data.token);
         return { success: true, user: res.data };
       }
-      throw new Error(res.message || 'Registration failed');
+      return { success: false, message: res.message || 'Registration failed. Please try again.' };
     } catch (err) {
-      // Mock registration fallback
-      const newUser = {
-        ...mockUsers.student,
-        email: userData.email,
-        fullName: userData.fullName,
-        role: userData.role,
-        token: 'mock-jwt-reg-token'
-      };
-      setUser(newUser);
-      setToken(newUser.token);
-      return { success: true, user: newUser };
+      if (err.response) {
+        return { success: false, message: err.response.data?.message || 'Registration failed. Please try again.' };
+      }
+      if (demoMode) {
+        const newUser = {
+          ...mockUsers.student,
+          email: userData.email,
+          fullName: userData.fullName,
+          role: userData.role,
+          token: 'mock-jwt-reg-token'
+        };
+        setUser(newUser);
+        setToken(newUser.token);
+        return { success: true, user: newUser };
+      }
+      return { success: false, message: 'Unable to reach the registration service. Please try again later.' };
     } finally {
       setLoading(false);
     }
@@ -83,12 +100,14 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('smart_campus_user');
-    localStorage.removeItem('smart_campus_jwt');
+    if (demoMode) {
+      localStorage.removeItem('smart_campus_user');
+      localStorage.removeItem('smart_campus_jwt');
+    }
   };
 
-  // Quick switch for examiners / demo
   const switchDemoRole = (roleType) => {
+    if (!demoMode) return;
     const target = mockUsers[roleType] || mockUsers.student;
     setUser(target);
     setToken(target.token);
