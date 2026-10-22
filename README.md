@@ -204,7 +204,7 @@ erDiagram
 ## 10. Project Directory Structure
 
 ```
-smart-campus-cloud-java/
+smart-campus-cloud/
 ├── backend/
 │   ├── pom.xml
 │   ├── Dockerfile
@@ -359,8 +359,9 @@ When adding a feature to the README or role matrix, verify that a matching contr
 
 ### Launch Application
 ```bash
-# Clone or navigate to the project directory
-cd smart-campus-cloud-java
+# Clone the repository and enter its directory
+git clone https://github.com/divya12314/smart-campus-cloud.git
+cd smart-campus-cloud
 
 # Build and start all 3 containers (MySQL + Spring Boot + React)
 docker compose up --build
