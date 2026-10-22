@@ -51,7 +51,7 @@ Traditional university operations suffer from:
 The items below describe the current frontend/backend scope. See [REST API Documentation](#11-rest-api-documentation-overview) for implemented endpoints. Features without a matching endpoint are listed as planned/not yet available rather than implied to work.
 
 ### 🎓 Student Features
-- Student dashboard and attendance views.
+- Student dashboard and subject-wise attendance views, with alerts when attendance falls below 75%.
 - Submit and view complaints and leave requests.
 - Browse announcements and campus events; register for events.
 - View notifications and profile information.
@@ -272,7 +272,7 @@ smart-campus-cloud-java/
 This section lists the backend endpoints currently implemented in the repository. Endpoints require a valid JWT unless stated otherwise. Role restrictions are noted where enforced by controller annotations/security configuration. This list is intentionally limited to implemented routes; planned features are listed in Section 5.
 
 ### Authentication (`/api/auth`)
-- `POST /api/auth/login`: Authenticate with email/password and receive a JWT and user profile. Public.
+- `POST /api/auth/login`: Authenticate with email/password. Returns a JWT and user profile. Public.
 - `POST /api/auth/register`: Register an account. Public; registration rules are enforced by the service.
 - `GET /api/auth/me`: Return the authenticated user's profile.
 
