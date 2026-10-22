@@ -48,26 +48,36 @@ Traditional university operations suffer from:
 
 ## 5. Key Features
 
+The items below describe the current frontend/backend scope. See [REST API Documentation](#11-rest-api-documentation-overview) for implemented endpoints. Features without a matching endpoint are listed as planned/not yet available rather than implied to work.
+
 ### 🎓 Student Features
-- **Student Dashboard**: Real-time aggregate attendance gauge, active complaint status milestones, and upcoming event tickets.
-- **Attendance Center**: Subject-wise percentage breakdown (Present, Absent, Late), danger alerts for $<75\%$ shortage, and date-by-date daily logs.
-- **Grievance Triage**: Lodge maintenance tickets across 8 categories (Infrastructure, Electrical, Water, Internet, Classroom, Hostel, Transport, Other) with priority and location tags.
-- **Leave Applications**: Apply for multi-day leaves with automatic date validation and track advisor remarks.
-- **Campus Hub**: Explore and register for inter-college hackathons, guest lectures, and cultural galas.
-- **Notification Drawer**: Real-time alerts on attendance warnings, leave approvals, and circulars.
+- Student dashboard and attendance views.
+- Submit and view complaints and leave requests.
+- Browse announcements and campus events; register for events.
+- View notifications and profile information.
 
 ### 👨‍🏫 Faculty Features
-- **Interactive Class Attendance**: Dynamic student roster grid with 1-click toggles (Present / Absent / Late) and real-time head-count counters.
-- **Leave Review Queue**: Review student leave applications with 1-click **Approve** or **Reject** modals and feedback remarks.
-- **Issue Triage**: Update grievance statuses to *In Progress*, *Resolved*, or *Rejected* with technician dispatch notes.
-- **Student Directory**: Inspect assigned student profiles, CGPA metrics, and emergency guardian contacts.
-- **Announcements**: Publish circulars with priority flags and target audience filters.
+- View faculty dashboard and assigned student roster.
+- Mark attendance and review leave requests.
+- Review and update complaint status.
+- Create and delete announcements.
+- Create and delete campus events.
 
 ### ⚡ Administrator Features
-- **Executive Cloud Dashboard**: Live charts of grievance distribution by category, department student enrollment bar charts, and container health metrics.
-- **User Master Directory**: Activate/Deactivate student and faculty accounts.
-- **Campus Facility Manager**: Reserve, allocate, and release smart computer labs, conference rooms, auditoriums, and makerspaces.
-- **Security Audit Logs**: Immutable audit trail capturing timestamp, user email, entity, action type, and client IP address.
+- View institutional dashboard, student/faculty directories, departments, complaints, leave requests, and audit logs.
+- Activate/deactivate user accounts.
+- Create departments.
+- Manage campus resources using the currently implemented booking/release endpoints.
+
+### Planned / Not Yet Implemented
+The following should not be considered available until matching backend endpoints and role checks are added:
+- Update existing announcements or events.
+- Delete/unregister an event registration.
+- Create, update, or delete user accounts (beyond the existing user-status toggle).
+- Update or delete departments (department creation is supported).
+- Change password, forgot/reset password, logout endpoint, or JWT refresh endpoint.
+- Update the current user's profile (the existing profile endpoint is read-only).
+- Any other operation not listed in the REST API section below.
 
 ---
 
@@ -259,47 +269,78 @@ smart-campus-cloud-java/
 
 ## 11. REST API Documentation Overview
 
+This section lists the backend endpoints currently implemented in the repository. Endpoints require a valid JWT unless stated otherwise. Role restrictions are noted where enforced by controller annotations/security configuration. This list is intentionally limited to implemented routes; planned features are listed in Section 5.
+
 ### Authentication (`/api/auth`)
-- `POST /api/auth/login`: Authenticate email/password $\rightarrow$ Returns JWT Bearer token & user profile.
-- `POST /api/auth/register`: Register new student or faculty account.
-- `GET  /api/auth/me`: Get current authenticated user session details.
+- `POST /api/auth/login`: Authenticate with email/password and receive a JWT and user profile. Public.
+- `POST /api/auth/register`: Register an account. Public; registration rules are enforced by the service.
+- `GET /api/auth/me`: Return the authenticated user's profile.
+
+**Not implemented:** change password, forgot/reset password, logout, token refresh, and profile update endpoints.
 
 ### Student Module (`/api/students`)
-- `GET  /api/students/dashboard`: Student aggregate metrics and attendance percentage.
-- `GET  /api/students/attendance`: Subject-wise attendance calculation.
-- `GET  /api/students/attendance/history`: Daily date-by-date attendance logs.
-- `GET  /api/students/complaints`: List student submitted complaints.
-- `POST /api/students/complaints`: Lodge new grievance ticket.
-- `GET  /api/students/leave`: List student leave requests.
-- `POST /api/students/leave`: Submit leave request.
+- `GET /api/students/dashboard`: Student dashboard metrics.
+- `GET /api/students/attendance`: Subject-wise attendance summary.
+- `GET /api/students/attendance/history`: Attendance history.
+- `GET /api/students/complaints`: List the current student's complaints.
+- `POST /api/students/complaints`: Submit a complaint.
+- `GET /api/students/leave`: List the current student's leave requests.
+- `POST /api/students/leave`: Submit a leave request.
 
 ### Faculty Module (`/api/faculty`)
-- `GET  /api/faculty/dashboard`: Faculty KPI metrics and pending tasks.
-- `GET  /api/faculty/students`: Assigned students roster with CGPA.
-- `POST /api/faculty/attendance`: Batch mark lecture attendance.
-- `GET  /api/faculty/leave-requests`: Department leave requests to review.
-- `PUT  /api/faculty/leave-requests/{id}`: Approve or reject leave request.
-- `GET  /api/faculty/complaints`: Campus complaints to triage.
-- `PUT  /api/faculty/complaints/{id}`: Update grievance status & remarks.
+- `GET /api/faculty/dashboard`: Faculty dashboard.
+- `GET /api/faculty/students`: Assigned student roster.
+- `POST /api/faculty/attendance`: Mark attendance.
+- `GET /api/faculty/leave-requests`: List leave requests.
+- `PUT /api/faculty/leave-requests/{id}`: Review a leave request.
+- `GET /api/faculty/complaints`: List complaints.
+- `PUT /api/faculty/complaints/{id}`: Update complaint status/details.
 
 ### Admin Module (`/api/admin`)
-- `GET  /api/admin/dashboard`: Institutional overview & distribution charts.
-- `GET  /api/admin/students`: Enrolled student master list.
-- `GET  /api/admin/faculty`: Teaching staff directory.
-- `GET  /api/admin/departments`: Academic departments.
-- `PUT  /api/admin/users/{id}/toggle-status`: Enable or disable user access.
-- `GET  /api/admin/logs`: Audit trail logs.
+All routes in this module require the admin role.
+- `GET /api/admin/dashboard`: Institutional dashboard metrics.
+- `GET /api/admin/students`: List students.
+- `GET /api/admin/faculty`: List faculty.
+- `GET /api/admin/departments`: List departments.
+- `POST /api/admin/departments`: Create a department.
+- `GET /api/admin/complaints`: List complaints.
+- `GET /api/admin/leave-requests`: List leave requests.
+- `PUT /api/admin/users/{id}/toggle-status`: Toggle a user's active status.
+- `GET /api/admin/logs`: List recent audit logs.
 
-### Shared Modules (`/api/announcements`, `/api/events`, `/api/resources`, `/api/notifications`)
-- `GET  /api/announcements`: List announcements feed.
-- `POST /api/announcements`: Publish announcement (Faculty/Admin).
-- `GET  /api/events`: Upcoming campus events calendar.
-- `POST /api/events/{id}/register`: Register participant for event.
-- `GET  /api/resources`: Campus facilities list & booking status.
-- `POST /api/resources/{id}/book`: Reserve lab or auditorium.
-- `POST /api/resources/{id}/release`: Release occupied facility.
-- `GET  /api/notifications`: User notifications.
-- `PUT  /api/notifications/{id}/read`: Mark notification as read.
+**Not implemented:** general user create/update/delete endpoints and department update/delete endpoints.
+
+### Announcements (`/api/announcements`)
+- `GET /api/announcements`: List announcements.
+- `GET /api/announcements/my-role`: List announcements for the authenticated user's role.
+- `POST /api/announcements`: Create an announcement (Faculty/Admin).
+- `DELETE /api/announcements/{id}`: Delete an announcement (Faculty/Admin; service applies ownership/authorization rules).
+
+**Not implemented:** update/edit announcement endpoint.
+
+### Events (`/api/events`)
+- `GET /api/events`: List all events.
+- `GET /api/events/upcoming`: List upcoming events.
+- `POST /api/events`: Create an event (Faculty/Admin).
+- `POST /api/events/{id}/register`: Register the authenticated user for an event.
+- `DELETE /api/events/{id}`: Delete an event (Faculty/Admin).
+
+**Not implemented:** event editing and event unregistration endpoint.
+
+### Resources (`/api/resources`)
+- `GET /api/resources`: List resources and booking status.
+- `POST /api/resources/{id}/book`: Book a resource.
+- `POST /api/resources/{id}/release`: Release a booked resource.
+
+### Notifications (`/api/notifications`)
+- `GET /api/notifications`: List notifications.
+- `GET /api/notifications/unread/count`: Get unread notification count.
+- `PUT /api/notifications/{id}/read`: Mark one notification as read.
+- `PUT /api/notifications/mark-all-read`: Mark all notifications as read.
+
+---
+### Documentation maintenance
+When adding a feature to the README or role matrix, verify that a matching controller endpoint and authorization rule exist. Otherwise label it as planned/not implemented.
 
 ---
 
