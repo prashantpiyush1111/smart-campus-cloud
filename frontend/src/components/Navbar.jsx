@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 export const Navbar = () => {
   const { user, logout, switchDemoRole } = useAuth();
+  const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
   const [showNotifs, setShowNotifs] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -45,8 +46,8 @@ export const Navbar = () => {
       </div>
 
       <div className="nav-right-actions">
-        {/* Quick Role Switcher for Examination Demo */}
-        <div style={{ position: 'relative' }}>
+        {/* Demo role switching is disabled by default and must be explicitly enabled. */}
+        {demoMode && <div style={{ position: 'relative' }}>
           <button
             onClick={() => setShowRoleMenu(!showRoleMenu)}
             style={{
@@ -101,7 +102,7 @@ export const Navbar = () => {
               </button>
             </div>
           )}
-        </div>
+        </div>}
 
         {/* Notifications Dropdown */}
         <div style={{ position: 'relative' }}>
