@@ -1,6 +1,8 @@
 import axios from 'axios';
 import * as MockData from './mockData';
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
   timeout: 6000,
@@ -21,13 +23,16 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor with graceful mock fallback for standalone presentation mode
+// Mock responses are opt-in for local demos; production/API failures must remain visible.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If backend is offline or network error occurs, serve mock data gracefully
+    if (!USE_MOCK) {
+      return Promise.reject(error);
+    }
+
     if (!error.response || error.code === 'ERR_NETWORK' || error.response.status === 404 || error.response.status === 502) {
-      console.warn('[Smart Campus] Backend unreachable, using fallback mock response for URL:', error.config?.url);
+      console.warn('[Smart Campus] VITE_USE_MOCK=true; using demo mock response for URL:', error.config?.url);
       const url = error.config?.url || '';
 
       if (url.includes('/auth/login')) {
@@ -35,7 +40,7 @@ api.interceptors.response.use(
         let user = MockData.mockUsers.student;
         if (data.email?.includes('admin')) user = MockData.mockUsers.admin;
         else if (data.email?.includes('faculty')) user = MockData.mockUsers.faculty;
-        return Promise.resolve({ data: { success: true, message: 'Mock Login Successful', data: user } });
+        return Promise.resolve({ data: { success: true, message: 'Mock Login Successful (demo mode)', data: user } });
       }
 
       if (url.includes('/students/dashboard')) {
