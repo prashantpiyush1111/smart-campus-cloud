@@ -92,6 +92,11 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(RegisterRequest registerRequest) {
+        // Public registration must never grant a privileged role from client input.
+        if (registerRequest.getRole() != null && registerRequest.getRole() != Role.ROLE_STUDENT) {
+            throw new BadRequestException("Public registration is limited to student accounts.");
+        }
+
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
             throw new BadRequestException("Email address is already in use!");
         }
@@ -106,49 +111,32 @@ public class AuthService {
         user.setEmail(registerRequest.getEmail());
         user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
         user.setFullName(registerRequest.getFullName());
-        user.setRole(registerRequest.getRole());
+        // Assign the only role that public registration is allowed to create.
+        user.setRole(Role.ROLE_STUDENT);
         user.setPhoneNumber(registerRequest.getPhoneNumber());
         user.setDepartment(department);
         user.setActive(true);
 
         User savedUser = userRepository.save(user);
 
-        if (registerRequest.getRole() == Role.ROLE_STUDENT) {
-            String roll = (registerRequest.getRollNumber() != null && !registerRequest.getRollNumber().isBlank())
-                    ? registerRequest.getRollNumber() : "STU-" + System.currentTimeMillis() % 10000;
+        String roll = (registerRequest.getRollNumber() != null && !registerRequest.getRollNumber().isBlank())
+                ? registerRequest.getRollNumber() : "STU-" + System.currentTimeMillis() % 10000;
 
-            if (studentProfileRepository.existsByRollNumber(roll)) {
-                throw new BadRequestException("Roll number is already in use!");
-            }
-
-            StudentProfile studentProfile = new StudentProfile();
-            studentProfile.setUser(savedUser);
-            studentProfile.setRollNumber(roll);
-            studentProfile.setAdmissionNumber(registerRequest.getAdmissionNumber());
-            studentProfile.setSemester(registerRequest.getSemester() != null ? registerRequest.getSemester() : "Semester 1");
-            studentProfile.setBatch(registerRequest.getBatch() != null ? registerRequest.getBatch() : "2024-2028");
-            studentProfile.setCgpa(8.5);
-            studentProfile.setGuardianName(registerRequest.getGuardianName());
-            studentProfile.setGuardianContact(registerRequest.getGuardianContact());
-            studentProfileRepository.save(studentProfile);
-        } else if (registerRequest.getRole() == Role.ROLE_FACULTY) {
-            String empCode = (registerRequest.getEmployeeCode() != null && !registerRequest.getEmployeeCode().isBlank())
-                    ? registerRequest.getEmployeeCode() : "FAC-" + System.currentTimeMillis() % 10000;
-
-            if (facultyProfileRepository.existsByEmployeeCode(empCode)) {
-                throw new BadRequestException("Employee code is already in use!");
-            }
-
-            FacultyProfile facultyProfile = new FacultyProfile();
-            facultyProfile.setUser(savedUser);
-            facultyProfile.setEmployeeCode(empCode);
-            facultyProfile.setDesignation(registerRequest.getDesignation() != null ? registerRequest.getDesignation() : "Assistant Professor");
-            facultyProfile.setQualification(registerRequest.getQualification() != null ? registerRequest.getQualification() : "Ph.D / M.Tech");
-            facultyProfile.setSpecialization(registerRequest.getSpecialization());
-            facultyProfileRepository.save(facultyProfile);
+        if (studentProfileRepository.existsByRollNumber(roll)) {
+            throw new BadRequestException("Roll number is already in use!");
         }
 
-        // Welcome notification
+        StudentProfile studentProfile = new StudentProfile();
+        studentProfile.setUser(savedUser);
+        studentProfile.setRollNumber(roll);
+        studentProfile.setAdmissionNumber(registerRequest.getAdmissionNumber());
+        studentProfile.setSemester(registerRequest.getSemester() != null ? registerRequest.getSemester() : "Semester 1");
+        studentProfile.setBatch(registerRequest.getBatch() != null ? registerRequest.getBatch() : "2024-2028");
+        studentProfile.setCgpa(8.5);
+        studentProfile.setGuardianName(registerRequest.getGuardianName());
+        studentProfile.setGuardianContact(registerRequest.getGuardianContact());
+        studentProfileRepository.save(studentProfile);
+
         notificationService.createNotification(
                 savedUser.getId(),
                 "Welcome to Smart Campus Cloud!",
@@ -159,7 +147,6 @@ public class AuthService {
 
         activityLogService.logActivity(savedUser.getEmail(), "USER_REGISTER", "User", savedUser.getId().toString(), "New user registered with role " + savedUser.getRole(), null);
 
-        // Auto authenticate and generate token
         AuthRequest authReq = new AuthRequest(registerRequest.getEmail(), registerRequest.getPassword());
         return login(authReq);
     }
