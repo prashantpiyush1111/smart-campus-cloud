@@ -500,4 +500,4 @@ Every push and pull request triggers `.github/workflows/ci.yml`:
 - **Project Name**: Smart Campus Cloud Management System
 - **Domain**: Full Stack Java Web Development & Cloud Architecture
 - **Frameworks**: Java 17, Spring Boot 3.3.2, Spring Security 6, React.js 18, MySQL 8
-- **License**: MIT Academic License
+- **License**: MIT License
