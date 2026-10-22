@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { Cloud, Lock, Mail, Sparkles, ArrowRight, Shield, CheckCircle2 } from 'lucide-react';
 
 export const Login = () => {
-  const [email, setEmail] = useState('student@campus.edu');
-  const [password, setPassword] = useState('Student@123');
+  const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+  const [email, setEmail] = useState(demoMode ? 'student@campus.edu' : '');
+  const [password, setPassword] = useState(demoMode ? 'Student@123' : '');
   const [error, setError] = useState('');
   const { login, loading } = useAuth();
   const navigate = useNavigate();
@@ -123,8 +124,8 @@ export const Login = () => {
             </button>
           </form>
 
-          {/* Quick Demo Credentials Switcher for viva / presentation */}
-          <div style={{ marginTop: '1.75rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          {/* Demo credentials are intentionally hidden unless explicitly enabled at build time. */}
+          {demoMode && <div style={{ marginTop: '1.75rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: '#818cf8', fontWeight: 700, marginBottom: '0.75rem' }}>
               <Sparkles size={14} /> INSTANT DEMO EVALUATION LOGINS
             </div>
@@ -152,7 +153,7 @@ export const Login = () => {
                 ⚡ Admin
               </button>
             </div>
-          </div>
+          </div>}
 
           <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.85rem', color: '#94a3b8' }}>
             New student or faculty?{' '}
