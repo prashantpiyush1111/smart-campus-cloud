@@ -435,15 +435,13 @@ Every push and pull request triggers `.github/workflows/ci.yml`:
 
 ---
 
-## 18. Demo Mode and Local-Only Credentials
+## 18. Demo Mode and Local-Only Accounts
 
-| Role | Email Address | Password | Name |
-| :--- | :--- | :--- | :--- |
-| **Student** | `student@campus.edu` | `Student@123` | Alex Johnson (CSE Sem 6) |
-| **Faculty** | `faculty@campus.edu` | `Faculty@123` | Dr. Alan Turing (Assoc. Prof) |
-| **Admin** | `admin@campus.edu` | `Admin@123` | Campus Administrator |
+Demo accounts are created by the backend seed initializer only when the `dev` Spring profile is explicitly enabled. Their login details are intentionally not published here. Use only disposable local databases for demos.
 
-These credentials are for disposable local demo databases only. The backend's `DataInitializer` runs only with the `dev` Spring profile. For a local UI walkthrough, set `VITE_DEMO_MODE=true` in the frontend environment before building; this enables the demo login buttons and role switcher. Keep `VITE_DEMO_MODE=false` (or unset) for staging and production builds, and never seed demo accounts into a production database. Frontend flags only control the UI and are not a backend security boundary.
+For a local UI walkthrough, set `VITE_DEMO_MODE=true` in the frontend environment before building. This enables mock fallback and demo-only login/role-switch controls. Keep `VITE_DEMO_MODE=false` (or unset) for staging and production builds. Run the backend with `SPRING_PROFILES_ACTIVE=dev` only in local development; do not enable this profile against production data.
+
+The frontend flag controls demo UI only and is not a security boundary. The production backend must still use real authentication and authorization.
 
 ---
 
