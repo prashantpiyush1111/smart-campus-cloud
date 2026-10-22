@@ -9,6 +9,8 @@ const api = axios.create({
   }
 });
 
+const demoMode = import.meta.env.VITE_DEMO_MODE === 'true';
+
 // Request interceptor to attach JWT Token
 api.interceptors.request.use(
   (config) => {
@@ -26,7 +28,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     // If backend is offline or network error occurs, serve mock data gracefully
-    if (!error.response || error.code === 'ERR_NETWORK' || error.response.status === 404 || error.response.status === 502) {
+    if (demoMode && (!error.response || error.code === 'ERR_NETWORK' || error.response.status === 404 || error.response.status === 502)) {
       console.warn('[Smart Campus] Backend unreachable, using fallback mock response for URL:', error.config?.url);
       const url = error.config?.url || '';
 
