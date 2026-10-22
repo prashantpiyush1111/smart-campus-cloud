@@ -108,4 +108,30 @@ public class AuthServiceTest {
         assertThrows(BadRequestException.class, () -> authService.register(req));
         verify(userRepository, never()).save(any());
     }
+
+    @Test
+    @DisplayName("Should reject public registration with admin role")
+    void testRegisterRejectsAdminRole() {
+        RegisterRequest req = new RegisterRequest();
+        req.setEmail("attacker@campus.edu");
+        req.setPassword("password123");
+        req.setFullName("Attacker");
+        req.setRole(Role.ROLE_ADMIN);
+
+        assertThrows(BadRequestException.class, () -> authService.register(req));
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should reject public registration with faculty role")
+    void testRegisterRejectsFacultyRole() {
+        RegisterRequest req = new RegisterRequest();
+        req.setEmail("attacker@campus.edu");
+        req.setPassword("password123");
+        req.setFullName("Attacker");
+        req.setRole(Role.ROLE_FACULTY);
+
+        assertThrows(BadRequestException.class, () -> authService.register(req));
+        verify(userRepository, never()).save(any());
+    }
 }
