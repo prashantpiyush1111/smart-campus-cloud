@@ -362,6 +362,12 @@ When adding a feature to the README or role matrix, verify that a matching contr
 # Clone or navigate to the project directory
 cd smart-campus-cloud-java
 
+# Generate a unique strong JWT secret and copy the output
+openssl rand -base64 64
+
+# Copy .env.example to .env, then set JWT_SECRET to the generated value.
+# Also replace the example database passwords with strong local values.
+
 # Build and start all 3 containers (MySQL + Spring Boot + React)
 docker compose up --build
 ```
@@ -372,6 +378,16 @@ docker compose up --build
 - **MySQL Database**: `localhost:3306`
 
 ---
+
+### JWT Secret Setup
+
+Before starting the application with Docker Compose, create a local `.env` file and provide a unique secret. Generate one with:
+
+```bash
+openssl rand -base64 64
+```
+
+Copy the generated output into `JWT_SECRET` in your local `.env` file. Do not commit `.env` or reuse the example placeholder. Docker Compose and the backend require `JWT_SECRET` and will not use a hardcoded fallback.
 
 ## 14. Local Development Setup (Manual Run)
 
